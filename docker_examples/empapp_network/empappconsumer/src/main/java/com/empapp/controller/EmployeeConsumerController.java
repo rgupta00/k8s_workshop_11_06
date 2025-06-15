@@ -14,6 +14,7 @@ public class EmployeeConsumerController {
 	
 	@GetMapping(path = "employee-consumer")
 	public String getEmployee() {
+		//http://producer:8080/employee
 		Employee employee=
 				restTemplate.getForObject("http://producer:8080/employee", Employee.class);
 		return employee.toString();

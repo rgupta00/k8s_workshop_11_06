@@ -1,13 +1,4 @@
 
-Agenda : docker basics
-		 docker spring boot
-		 docker networking
-		 docker compose 
-		
-
-
-
-
 What is docker?
 _______________
 Docker containers wrap a  piece of software in a  complete filesystem that  

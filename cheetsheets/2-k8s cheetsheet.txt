@@ -1,9 +1,14 @@
 K8s Notes:
 -------------
+https://github.com/rgupta00/k8s_workshop_11_06
+
+
 while (1) {kubectl get all;sleep 5;cls}
 
 agenda:
 -------
+* Intro to cloud native application and need of containization tech
+* docker essential 101
 * Intro to kubernetes
 * Setup kind local cluster
 * Pods
@@ -28,7 +33,110 @@ What is cloud native application development?
 	HA, Scalable, responsive, fault tolerent 
 	speed ang agility
 
+what is typically included in cloud-native applications
+------------------------------------------------------
+Cloud-native applications are designed specifically 
+to run in cloud environments by leveraging cloud computing principles and infrastructure. 
+Here’s a breakdown of what is typically included in cloud-native applications:
 
+Core Components of Cloud-Native Applications
+------------------------------------------------------
+
+Microservices Architecture
+	Application is broken into small, independent services.
+	Each service is responsible for a single business capability 
+	and can be deployed independently.
+
+Containers
+	Services are packaged in containers (e.g., Docker) 
+	to ensure consistent environments across development, testing, and production.
+
+Container Orchestration
+	Tools like Kubernetes or OpenShift manage deployment, 
+	scaling, and resilience of containerized applications.
+
+DevOps and CI/CD Pipelines
+	Continuous Integration and Continuous Delivery/Deployment 
+	ensure faster and reliable release cycles.
+
+	Tools: Jenkins, GitHub Actions, GitLab CI, ArgoCD, Tekton.
+
+API-First Design
+	Services communicate over lightweight APIs (REST, gRPC, GraphQL).
+	Promotes loose coupling and easier integration.
+
+Infrastructure as Code (IaC)
+	Use of code to manage and provision infrastructure 
+	(e.g., Terraform, AWS CloudFormation).
+
+Cloud-Native Storage & Databases
+	Use of scalable and resilient storage solutions:
+
+	Block/Object storage (e.g., S3, Azure Blob)
+	NoSQL (e.g., MongoDB, DynamoDB)
+	Cloud-managed SQL (e.g., RDS, Cloud SQL)
+
+Service Mesh
+	Handles service-to-service communication, security, 
+	and observability (e.g., Istio, Linkerd).
+
+Auto-Scaling & Self-Healing
+	Applications automatically scale based on load.
+	Failed containers/services are automatically restarted.
+
+Observability and Monitoring
+	Centralized logging (ELK stack, Fluentd)
+	Metrics and monitoring (Prometheus, Grafana, Datadog)
+	Tracing (Jaeger, Zipkin)
+
+Cloud Provider Integration
+	Managed Services: Databases, message queues 
+	(e.g., SQS, Pub/Sub), storage, serverless functions.
+
+	Security & Identity: IAM, VPC, encryption, secrets management.
+
+	Serverless Computing (Optional Part): AWS Lambda,
+	 Google Cloud Functions, Azure Functions.
+
+Example Tech Stack
+---------------------
+		Layer							Tools/Tech Examples
+		---------------------------------------------------
+		Programming Lang				Java, Go, Node.js, Python
+		Frameworks						Spring Boot, Micronaut, Express.js
+		Containerization				Docker
+		Orchestration					Kubernetes
+		CI/CD							GitHub Actions, Jenkins, ArgoCD
+		Monitoring						Prometheus, Grafana, Loki, Fluentd
+		Messaging						Kafka, RabbitMQ, NATS
+		API Gateway						Kong, Istio, Ambassador, AWS API Gateway
+		Storage							S3, EBS, Azure Blob, Google Cloud Storage
+		Database						PostgreSQL, MongoDB, DynamoDB, Redis
+		
+https://github.com/mikeroyal/Cloud-Native-Guide?tab=readme-ov-file
+
+		
+Kubernetes (K8s) plays a key role in microservices by:
+--------------------------------------------------------
+	Orchestrating Containers 
+			Automates deployment, scaling, and management of containerized microservices.
+
+	Service Discovery & Load Balancing 
+			Enables microservices to find and communicate with each other reliably.
+
+	Auto-scaling
+			Automatically adjusts the number of service instances based on traffic/load.
+
+	Self-healing
+		Restarts failed containers and replaces unresponsive ones automatically.
+
+	Rolling Updates & Rollbacks
+		Safely deploys new versions of services without downtime.
+
+	Config & Secret Management
+		Manages environment configs and secrets securely.
+		
+		
 Docker pre req?
 -------------
 Docker arch, docker images, containers, networking, 
@@ -61,8 +169,9 @@ What is kubernetes?
 kubernetes which is provided by cloud provide
 
 kubernetes setup:
-
+-----------------
 	local setup: docker + kubectl + minikube/kind
+	
 	cloud setup : 
 	
 	The four major Kubernetes providers are:
@@ -469,10 +578,10 @@ kubectl get pod pod-1 -o wide
  
  
  
- Port forwarding
- ------------------
- 04-port-forwarding.yaml
- -----------------------
+Port forwarding
+------------------
+04-port-forwarding.yaml
+-----------------------
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1063,9 +1172,9 @@ spec:
 	
 	Type of services
 	------------------
-	* clusterIP (within)
-	* NodePort (External)
-	* Load balancer(External)
+		* clusterIP (within)
+		* NodePort (External)
+		* Load balancer(External)
 	
 	
 watch -t -x kubectl get all
@@ -1132,9 +1241,9 @@ spec:
 
 --------------------
 	Namespace
----------------------
+----------------------------
  get all existing namespaces
- ---------------------------------
+----------------------------
  kubectl get ns
 
 NAME                 STATUS   AGE
@@ -1226,12 +1335,29 @@ spec:
 
 understanding kube-system 
 -----------------------------
+	kube-system is a special namespace in Kubernetes where it runs internal 
+	system components that help the cluster work properly.
+
+	Simple Explanation:
+		Think of kube-system as the engine room of your Kubernetes cluster. 
+		It holds the tools and services that keep Kubernetes itself running.
+
+Examples of what runs in kube-system:
+-----------------------------------
+	kube-dns / CoreDNS – Helps services find each other (DNS).
+	kube-proxy – Handles networking between pods.
+	etcd – Stores cluster data and configuration.
+	kube-controller-manager – Manages controllers (e.g., for replicas, nodes).
+	kube-scheduler – Decides which node runs which pod.
+	cloud-controller-manager (if using cloud provider).
+
+
 
 kubectl get pod -n kube-system 
-
-it gives lods of pod running under kube-system as pod
-kindnet is CNI plugin to provide networking amongs different nodes
-CoreDNS is a dns server translate logical name to ip address
+------------------------------
+	it gives lods of pod running under kube-system as pod
+	kindnet is CNI plugin to provide networking amongs different nodes
+	CoreDNS is a dns server translate logical name to ip address
 
 NAME                                                READY   STATUS    RESTARTS   AGE
 coredns-5d78c9869d-jhzcl                            1/1     Running   0          4h12m
@@ -1434,8 +1560,39 @@ spec:
 
 
 
+
+
 Configmap and secret:
+----------------------
+Explanation of ConfigMap and Secret in Kubernetes:
+
+ConfigMap (for non-sensitive data)
+-------------------------------
+	Purpose: Store configuration data (like app settings) in key-value format.
+
+	Example Use:
+	You want your app to read a value like LOG_LEVEL=debug without hardcoding it.
+
+	Think of it as:
+	A notepad for your app’s settings.
+
+Secret (for sensitive data)
 -----------------------------
+	Purpose: Store sensitive info like passwords, API keys, tokens securely.
+
+	Example Use:
+	You need to pass DB_PASSWORD=MySecure@123 to your app.
+
+	Think of it as:
+	A locked vault for confidential app data.
+
+How they're used:
+---------------------
+	Both can be mounted as files or injected as environment variables into pods.
+	Secrets are base64-encoded and should be used for private data.
+	ConfigMaps are for normal, non-secret configuration.
+
+
 
  kubectl apply -f .\01-simple-cm.yaml
  
@@ -1491,8 +1648,7 @@ spec:
 ------------------------
 now we want to insert all key-value in one go as env
 
-apiVersion: v1
-kind: ConfigMap
+apiVersion: vkind: ConfigMap
 metadata:
   name: app-properties
 data:
@@ -1578,18 +1734,21 @@ now observe file inside container:
 kubectl exec -it my-pod -- bash
  
 
+
+
 Secret:
---------------------------
-same as configMap but it is for sensitive data
-value is base64 encoded
-use cases:
-ssh key file
-basic credentials
-etc
+-------
+	same as configMap but it is for sensitive data
+	value is base64 encoded
+	use cases:
+	ssh key file
+	basic credentials
+	etc
 
 
 docker run -it ubuntu
-  
+---------------------
+
 echo raj | base64
 echo -n raj | base64
 cmFq
@@ -1654,13 +1813,47 @@ Resource Management & Auto Scaling
 -----------------------------------
 how we can get cpu memory usages of pods?
 
- kubectl top nodes
+Resource Management
+-------------------
+	Kubernetes allows you to control how much CPU and memory each pod can use:
+
+	Requests – Minimum guaranteed resources.
+	→ e.g., cpu: 100m, memory: 128Mi
+
+	Limits – Maximum resources a pod can use.
+	→ Prevents a pod from consuming too much.
+
+	Helps with fair sharing, performance, and scheduling across the cluster.
+
+Auto Scaling in K8s
+--------------------
+	Kubernetes can automatically adjust the number 
+	of pods or resources based on load.
+
+	Horizontal Pod Autoscaler (HPA)
+		Scales pods in/out based on CPU usage or custom metrics.
+		e.g., increase replicas when CPU > 80%
+
+	Vertical Pod Autoscaler (VPA)
+		Automatically adjusts CPU/memory requests/limits for a pod.
+
+	Cluster Autoscaler
+		Adds/removes nodes in the cluster based on pod demands
+		(in cloud environments like AWS, GCP, Azure).
+
+How It All Works Together:
+-------------------------
+	Requests/limits help schedule pods efficiently.
+	HPA/VPA adjust pods/resources based on real-time usage.
+	Cluster Autoscaler ensures enough infrastructure is available.
+
+kubectl top nodes
 
 
 install materix service:
 -----------------------
-
 kubectl apply -f .\metrics-server.yaml
+
 
 check if matrix server is install and ready:
 ----------------------------------------------
@@ -1723,6 +1916,11 @@ kubectl exec -it demo-pod -- bash
 
 Ingress:
 ---------
+What is Ingress?
+	Ingress is a Kubernetes resource that exposes your services to the internet 
+	using a single IP or domain, often with path-based or domain-based routing.
+
+It works with an Ingress Controller like NGINX to route HTTP/HTTPS traffic.
 
 Step 1:
 
