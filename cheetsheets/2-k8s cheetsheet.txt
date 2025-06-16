@@ -384,8 +384,9 @@ step 2: create kind cluster
   
   Now explore worker node:
  
+ a07f40b83057
  
- 
+   docker exec -it a07f40b83057 bash
    
   -------------
    	Pods
@@ -601,6 +602,9 @@ spec:
 	  
 	  
  create a tunnel from our machine to Pod
+ -------------------------------------------
+ port forwording: trick to check whether ur container is running successfully or not
+ --------------
  
  kubectl create -f 04-pod-port.yaml
  kubectl get pod
@@ -1177,7 +1181,25 @@ spec:
 		* Load balancer(External)
 	
 	
+	
+	
+clusterIP (within)
+----------------
+
+let go inside the  rgupta00/util
+-----------------------
+kubectl exec -it pod/demo-pod sh
+
+then curl:
+-----------
+curl http://empapp-svc:8080
+	
+	
+	
 watch -t -x kubectl get all
+
+nodeport service:
+-----------------------
 
 kubectl apply -f 01-nodeport-service.yaml 
 
@@ -1239,7 +1261,7 @@ spec:
 
 
 
---------------------
+	----------
 	Namespace
 ----------------------------
  get all existing namespaces
@@ -1806,6 +1828,213 @@ kubectl logs my-pod
 
 
 
+Ingress:
+---------
+What is Ingress?
+	Ingress is a Kubernetes resource that exposes your services to the internet 
+	using a single IP or domain, often with path-based or domain-based routing.
+
+It works with an Ingress Controller like NGINX to route HTTP/HTTPS traffic.
+
+Step 1:
+
+Nginx Ingress Controller:
+--------------------------
+The NGINX Ingress Controller is a Kubernetes component that uses 
+NGINX act as a reverse proxy (with the help of Ingress controller) to manage external 
+access to services in your cluster — typically over HTTP and HTTPS.
+
+In Simple Terms:
+---------------
+	Think of it like a smart gatekeeper:
+	You have many services in your Kubernetes cluster.
+
+You want users to access them via clean URLs like:
+	yourapp.com/api
+	yourapp.com/login
+
+Instead of exposing each service separately, 
+you put one NGINX Ingress Controller in front, and it decides which service gets which request.
+
+
+Architecture Overview:
+
+User ──> Ingress Controller (NGINX) ──> Service A
+                        └────────────> Service B
+						
+						
+Lab step by step:
+---------------------------
+delete old cluster to create new one:
+-----------------------------------------
+ kind delete cluster --name dev-cluster
+
+create new cluster:
+------------------
+ kind create cluster --config .\01-cluster.yaml
+ 
+  docker ps
+  
+Applying below resource:
+-------------------------
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+
+
+Example 1: Simple routes:
+-------------------------
+
+ Example1:02-simple-ingress
+ -------------------
+  kubectl apply -f .
+  
+  kubectl get ing
+  curl localhost
+ 
+
+
+
+Persistent Volume (PV) and Persistent Volume Claim (PVC) in Kubernetes
+------------------------------------------------------------------
+
+What’s the Problem?
+	When a container restarts in Kubernetes, 
+	any files saved inside it are lost — like saving notes on a whiteboard
+	that gets erased when the power goes out.
+
+But you sometimes want permanent storage:
+-------------------------------------
+	Databases (MySQL, MongoDB)
+	Uploaded files
+	Logs
+
+Kubernetes Solution: PV + PVC
+--------------------------------
+
+1. Persistent Volume (PV) = A physical storage space
+
+	Think of it like a hard disk that lives outside the container.
+	Can be local disk, NFS, AWS EBS, GCP Persistent Disk, etc.
+	Created by admin or dynamically
+
+2. Persistent Volume Claim (PVC) = A request for storage
+
+	Like saying: “I need a 5GB disk that’s read-write.”
+	Created by the developer or app
+	Automatically gets matched with a suitable PV
+
+Analogy:
+-------------
+Real Life												Kubernetes
+Parking Lot (empty space)								PV (Persistent Volume)
+You rent a spot											PVC (you claim it)
+Your car (app) parks there								Pod uses the volume
+
+How It Works Together
+-----------------------
+	Admin or cloud provider creates a PV
+	Your app creates a PVC
+	Kubernetes matches PVC to PV
+	PVC is mounted to your Pod, and you get permanent storage
+
+1-configMap.yml
+--------------
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mysql-config
+  labels:
+    app: todo
+data:
+  MYSQL_DB: "todo-db"
+  
+2-secrets.yml
+-------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  password: cm9vdA==
+  
+
+3-pv.yml
+------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-volume
+  labels:
+    type: mysql 
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/ubuntu/projects/mysql/volume"
+	
+	
+4-pvc.yml
+---------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+
+5-deployment.yml
+--------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_DB
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+
 
 
 
@@ -1878,7 +2107,7 @@ dev-cluster-worker2         32m          0%     180Mi           1%
  now increse no of replica to 50, then run
  now some of the pod is in pending state
  
- kubectl describe pod/my-deploy-76d58cdd59-22nr2
+ kubectl describe pod/my-deploy-76d58cdd59-wvq5c
  
 	   Warning  FailedScheduling  84s   
 	   default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint
@@ -1886,7 +2115,7 @@ dev-cluster-worker2         32m          0%     180Mi           1%
 	   preemption: 0/3 nodes are available: 1 Preemption is not helpful for scheduling, 2 No preemption victims found for incoming pod.
 	  
  
-HPA template:
+HPA template: Horizontal pod autoscaling
 -------------
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
 
@@ -1914,40 +2143,6 @@ kubectl exec -it demo-pod -- bash
  
 
 
-Ingress:
----------
-What is Ingress?
-	Ingress is a Kubernetes resource that exposes your services to the internet 
-	using a single IP or domain, often with path-based or domain-based routing.
-
-It works with an Ingress Controller like NGINX to route HTTP/HTTPS traffic.
-
-Step 1:
-
-Nginx Ingress Controller
-Applying below resource:
-
-# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-
-delete old cluster to create new one:
-
- kind delete cluster --name dev-cluster
-
-create new cluster:
- kind create cluster --config .\01-cluster.yaml
- 
- docker ps
- 
- Example1:02-simple-ingress
- -------------------
- 
-  kubectl get ing
-  curl localhost
- 
-
-
- 
 
 
 

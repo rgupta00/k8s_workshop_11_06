@@ -1,0 +1,11 @@
+Installation step:
+kubectl and kind cluster
+
+
+curl.exe -LO "https://dl.k8s.io/release/v1.33.0/bin/windows/amd64/kubectl.exe"
+
+ kind cluster:
+ 
+ Copy
+curl.exe -Lo kind-windows-amd64.exe https://kind.sigs.k8s.io/dl/v0.29.0/kind-windows-amd64
+Move-Item .\kind-windows-amd64.exe c:\k8s\kind.exe
